@@ -19,4 +19,4 @@ dependencies = [
 ]
 
 [tool.vercel]
-entrypoint = "tracer:app"
+entrypoint = "backend.main:app"
