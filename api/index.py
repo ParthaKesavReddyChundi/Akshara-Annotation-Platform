@@ -1,9 +1,22 @@
 import os
 import sys
 
-# Add the project root to sys.path so modules can be resolved correctly
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-# Add streamlit_app as well just in case legacy modules need it
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "streamlit_app"))
 
-from backend.main import app
+try:
+    from backend.main import app
+except Exception as e:
+    import traceback
+    crash_log = traceback.format_exc()
+    async def app(scope, receive, send):
+        assert scope['type'] == 'http'
+        await send({
+            'type': 'http.response.start',
+            'status': 200,  # Use 200 so Vercel doesn't mask the body!
+            'headers': [[b'content-type', b'text/plain']],
+        })
+        await send({
+            'type': 'http.response.body',
+            'body': crash_log.encode('utf-8'),
+        })
