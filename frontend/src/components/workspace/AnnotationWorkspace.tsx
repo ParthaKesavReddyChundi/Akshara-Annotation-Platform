@@ -68,7 +68,7 @@ export function AnnotationWorkspace() {
           start: Number(s.start) || 0,
           end: Number(s.end) || 5,
           speaker: s.speaker || 'Speaker 0 (Female)',
-          transcript: s.transcript ?? s.text ?? '',
+          transcript: s.transcript ?? (s as any).text ?? '',
           done: !!s.done
         }));
 
