@@ -190,10 +190,19 @@ def stream_audio(
 
     # If we have a cloudinary public ID, redirect directly to Cloudinary
     if hasattr(audio, 'cloudinary_public_id') and audio.cloudinary_public_id:
-        import cloudinary.utils
-        url, _ = cloudinary.utils.cloudinary_url(audio.cloudinary_public_id, resource_type="video")
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url=url)
+        try:
+            import cloudinary.utils
+            import os
+            
+            # If CLOUDINARY_URL is missing, cloudinary will raise ValueError
+            if not os.environ.get('CLOUDINARY_URL'):
+                raise ValueError("CLOUDINARY_URL environment variable is missing on Vercel.")
+                
+            url, _ = cloudinary.utils.cloudinary_url(audio.cloudinary_public_id, resource_type="video")
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=url)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cloudinary config error: {str(e)}")
 
     # If the file path is a URL (e.g. direct Cloudinary URL saved in file_path), redirect directly to it
     if audio.file_path and (audio.file_path.startswith("http://") or audio.file_path.startswith("https://")):
