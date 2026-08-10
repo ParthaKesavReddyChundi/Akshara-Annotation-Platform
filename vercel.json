@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api_entry.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     },
     {
@@ -13,10 +13,15 @@
       }
     }
   ],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{backend,streamlit_app,database,utils}/**"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api_entry.py"
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*)",
