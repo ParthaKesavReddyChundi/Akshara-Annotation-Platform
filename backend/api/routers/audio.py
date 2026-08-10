@@ -188,8 +188,15 @@ def stream_audio(
     if not audio:
         raise HTTPException(status_code=404, detail="Audio file not found")
 
-    # If the file path is a URL (e.g. Cloudinary), redirect directly to it
-    if audio.file_path.startswith("http://") or audio.file_path.startswith("https://"):
+    # If we have a cloudinary public ID, redirect directly to Cloudinary
+    if hasattr(audio, 'cloudinary_public_id') and audio.cloudinary_public_id:
+        import cloudinary.utils
+        url, _ = cloudinary.utils.cloudinary_url(audio.cloudinary_public_id, resource_type="video")
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=url)
+
+    # If the file path is a URL (e.g. direct Cloudinary URL saved in file_path), redirect directly to it
+    if audio.file_path and (audio.file_path.startswith("http://") or audio.file_path.startswith("https://")):
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=audio.file_path)
 
