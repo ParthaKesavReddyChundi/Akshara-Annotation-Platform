@@ -33,10 +33,9 @@ export default function ReviewWorkspace() {
 
   useEffect(() => {
     if (task?.reviewed_by_me) {
-      toast.error('You have already reviewed this task.');
-      navigate('/reviewer/history');
+      toast.success('Viewing in read-only mode (already reviewed).', { id: 'readonly-toast' });
     }
-  }, [task, navigate]);
+  }, [task?.reviewed_by_me]);
 
   const { data: annotation, isLoading: isAnnotationsLoading } = useQuery({
     queryKey: ['annotation', id],
@@ -131,6 +130,7 @@ export default function ReviewWorkspace() {
   if (!task || !effectiveAnnotation) return <div style={{ padding: '2rem', color: 'red' }}>Task not found</div>;
 
   const isModified = JSON.stringify(segments) !== JSON.stringify(originalSegments);
+  const isReadOnly = task.reviewed_by_me;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-main)' }}>
@@ -142,22 +142,26 @@ export default function ReviewWorkspace() {
         </button>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-secondary" onClick={() => setShowVersionHistory(true)}>⏳ Version History</button>
-          <button 
-            className="btn btn-secondary"
-            style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-            disabled={reviewMutation.isPending}
-            onClick={() => reviewMutation.mutate({ action: 'reject' })}
-          >
-            ❌ Reject
-          </button>
-          <button 
-            className="btn btn-primary"
-            style={{ background: 'var(--color-success)' }}
-            disabled={reviewMutation.isPending}
-            onClick={() => reviewMutation.mutate({ action: 'approve' })}
-          >
-            {reviewMutation.isPending ? 'Processing...' : '✅ Approve'}
-          </button>
+          {!isReadOnly && (
+            <>
+              <button 
+                className="btn btn-secondary"
+                style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                disabled={reviewMutation.isPending}
+                onClick={() => reviewMutation.mutate({ action: 'reject' })}
+              >
+                ❌ Reject
+              </button>
+              <button 
+                className="btn btn-primary"
+                style={{ background: 'var(--color-success)' }}
+                disabled={reviewMutation.isPending}
+                onClick={() => reviewMutation.mutate({ action: 'approve' })}
+              >
+                {reviewMutation.isPending ? 'Processing...' : '✅ Approve'}
+              </button>
+            </>
+          )}
           {user?.role === 'ADMIN' && task.status === 'COMPLETED' && (
             <button
               className="btn btn-primary"
@@ -309,6 +313,7 @@ export default function ReviewWorkspace() {
                       <textarea
                         value={seg.transcript || ''}
                         onChange={(e) => handleSegmentChange(idx, 'transcript', e.target.value)}
+                        disabled={isReadOnly}
                         style={{
                           width: '100%',
                           height: '100px',
@@ -318,7 +323,9 @@ export default function ReviewWorkspace() {
                           padding: '0.75rem',
                           borderRadius: 'var(--radius-sm)',
                           resize: 'vertical',
-                          fontFamily: 'var(--font-sans)'
+                          fontFamily: 'var(--font-sans)',
+                          opacity: isReadOnly ? 0.7 : 1,
+                          cursor: isReadOnly ? 'not-allowed' : 'text'
                         }}
                       />
                     </div>

@@ -188,6 +188,11 @@ def stream_audio(
     if not audio:
         raise HTTPException(status_code=404, detail="Audio file not found")
 
+    # If the file path is a URL (e.g. Cloudinary), redirect directly to it
+    if audio.file_path.startswith("http://") or audio.file_path.startswith("https://"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=audio.file_path)
+
     # Resolve file path relative to project root safely
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
     file_path = os.path.normpath(os.path.join(project_root, audio.file_path))
