@@ -91,28 +91,34 @@ def login(
     Returns access_token in JSON (short-lived, 15 min).
     Sets an HttpOnly refresh_token cookie (long-lived, 7 days).
     """
-    user = get_user_by_username(form_data.username)
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        user = get_user_by_username(form_data.username)
+        if not user or not verify_password(form_data.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="Inactive user account")
+
+        user.last_login = datetime.utcnow()
+        user.last_seen = datetime.utcnow()
+        db.commit()
+
+        access_token = create_access_token(
+            data={"sub": user.id, "role": user.role.value},
+            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user account")
+        raw_refresh = _create_and_persist_refresh_token(user.id, db)
+        _set_refresh_cookie(response, raw_refresh)
 
-    user.last_login = datetime.utcnow()
-    user.last_seen = datetime.utcnow()
-    db.commit()
-
-    access_token = create_access_token(
-        data={"sub": user.id, "role": user.role.value},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-    )
-    raw_refresh = _create_and_persist_refresh_token(user.id, db)
-    _set_refresh_cookie(response, raw_refresh)
-
-    return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=traceback.format_exc())
 
 
 @router.post("/refresh")
