@@ -75,6 +75,17 @@ app.include_router(annotations_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
 app.include_router(queue_router, prefix="/api")
 
+@app.get("/api/test-db")
+async def test_db():
+    import traceback
+    try:
+        from database.database import engine
+        import psycopg2
+        with engine.connect() as conn:
+            return {"status": "ok"}
+    except Exception as e:
+        return {"error": str(e), "trace": traceback.format_exc()}
+
 # Serve static assets (local audio files fallback)
 assets_dir = os.path.join(_PROJECT_ROOT, "assets")
 if os.path.exists(assets_dir):
