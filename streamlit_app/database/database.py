@@ -44,14 +44,13 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("sqlite"):
     raise ValueError("CRITICAL: SQLite is no longer supported. Please use a Supabase PostgreSQL connection.")
 
+from sqlalchemy.pool import NullPool
+
 # PostgreSQL (Supabase)
-# pool_pre_ping=True: test connection health before each checkout
-# pool_size + max_overflow: sensible defaults for a web app
+# NullPool: don't persist connections between requests (required for serverless)
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
+    poolclass=NullPool,
     echo=False,
 )
 

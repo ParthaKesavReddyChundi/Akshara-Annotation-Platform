@@ -213,16 +213,11 @@ async def startup():
             conn.execute(text("SELECT 1"))
         logger.info("Database connection: successful")
     except Exception as e:
-        logger.error(f"CRITICAL: Database connection failed! {e}")
-        sys.exit(1)
+        logger.warning(f"Database connection check failed on startup: {e}")
         
     logger.info("API docs available at /api/docs")
-    # Launch the abandoned-task cleanup loop
-    asyncio.create_task(_release_abandoned_tasks())
-    logger.info(
-        f"Abandoned task cleanup started "
-        f"(ASSIGNED>{ASSIGNED_TIMEOUT_MINUTES}min, IN_PROGRESS>{IN_PROGRESS_TIMEOUT_MINUTES}min)"
-    )
+    # Note: Background task cleanup is not started in serverless environments
+    logger.info("Startup complete.")
 
 
 @app.on_event("shutdown")
