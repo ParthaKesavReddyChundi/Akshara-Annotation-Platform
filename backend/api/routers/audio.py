@@ -198,7 +198,7 @@ def stream_audio(
             if not os.environ.get('CLOUDINARY_URL'):
                 raise ValueError("CLOUDINARY_URL environment variable is missing on Vercel.")
                 
-            url, _ = cloudinary.utils.cloudinary_url(audio.cloudinary_public_id, resource_type="video")
+            url, _ = cloudinary.utils.cloudinary_url(audio.cloudinary_public_id, resource_type="video", secure=True)
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url=url)
         except Exception as e:
