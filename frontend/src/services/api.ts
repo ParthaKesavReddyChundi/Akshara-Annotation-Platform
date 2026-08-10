@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth';
 
-const _envUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// In production (Vercel), requests to /api will be routed automatically by vercel.json
+const _envUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 export const API_BASE_URL = _envUrl.endsWith('/api') ? _envUrl : `${_envUrl}/api`;
 
 export const api = axios.create({
