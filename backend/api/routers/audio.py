@@ -188,35 +188,12 @@ def stream_audio(
     if not audio:
         raise HTTPException(status_code=404, detail="Audio file not found")
 
-    # If we have a cloudinary public ID, redirect directly to Cloudinary
-    if hasattr(audio, 'cloudinary_public_id') and audio.cloudinary_public_id:
-        try:
-            import cloudinary.utils
-            import os
-            
-            # If CLOUDINARY_URL is missing, cloudinary will raise ValueError
-            if not os.environ.get('CLOUDINARY_URL'):
-                raise ValueError("CLOUDINARY_URL environment variable is missing on Vercel.")
-            
-            import os.path
-            ext = 'wav'
-            if audio.file_path:
-                _, ext_val = os.path.splitext(audio.file_path)
-                if ext_val:
-                    ext = ext_val.lstrip('.')
-                    
-            url, _ = cloudinary.utils.cloudinary_url(
-                audio.cloudinary_public_id, 
-                resource_type="video", 
-                secure=True,
-                format=ext
-            )
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(url=url)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Cloudinary config error: {str(e)}")
+    # If the audio_url is already a direct link (e.g. Cloudinary secure_url saved during upload), use it!
+    if hasattr(audio, 'audio_url') and audio.audio_url and (audio.audio_url.startswith("http://") or audio.audio_url.startswith("https://")):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=audio.audio_url)
 
-    # If the file path is a URL (e.g. direct Cloudinary URL saved in file_path), redirect directly to it
+    # Fallback: if the file path is a URL (some older data might have it here)
     if audio.file_path and (audio.file_path.startswith("http://") or audio.file_path.startswith("https://")):
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=audio.file_path)
